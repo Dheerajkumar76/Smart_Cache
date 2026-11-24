@@ -122,7 +122,12 @@ class CacheSimulator:
                         last_access=timestamp,
                     )
                 )
-
+                
+            # Optional hook: policies that want to see every request (hits
+            # included), such as the safety guard, implement observe_request.
+            observe = getattr(policy, "observe_request", None)
+            if observe is not None:
+                observe(key, float(request["cost"]), matching_entry is not None, timestamp)
             last_access[key] = timestamp
             frequency[key] += 1
             access_history.append(key)

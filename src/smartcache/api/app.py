@@ -165,6 +165,7 @@ a,button {{ color:#fff; background:#1d4f87; border:1px solid #3479c7; border-rad
 <strong>{settings["max_objects"]}</strong> objects</p></div>
 <div class="card"><h2>Open</h2>
 <a href="/explorer">Simulation Explorer</a>
+<a href="/impact">Impact report</a>
 <a href="/docs">API documentation</a>
 <a href="/catalog">Object catalog</a>
 <a href="/metrics-ui">Live metrics</a></div>
@@ -285,12 +286,22 @@ refresh(); setInterval(refresh, 1000);
         seed: int = 2026,
         requests: int = 30,
         capacity: int = 3,
+        workload: str = "demo",
     ):
         # The explorer replays the fixed-slot model. The live runtime uses the
         # byte-aware model, whose state/action dimensions are incompatible with
         # this slot-based simulation.
         checkpoint = os.getenv(
             "CACHE_SIMULATION_CHECKPOINT", "artifacts/dqn_best.pt"
+        )
+        dueling_checkpoint = os.getenv(
+            "CACHE_SIMULATION_DUELING_CHECKPOINT", "artifacts/dueling_dqn_best.pt"
+        )
+        ppo_checkpoint = os.getenv(
+            "CACHE_SIMULATION_PPO_CHECKPOINT", "artifacts/ppo_best.pt"
+        )
+        learned_model = os.getenv(
+            "CACHE_SIMULATION_LEARNED_MODEL", "artifacts/learned_value.npz"
         )
         try:
             return build_simulation(
@@ -299,9 +310,29 @@ refresh(); setInterval(refresh, 1000);
                 requests_count=requests,
                 capacity=capacity,
                 checkpoint=checkpoint,
+                dueling_checkpoint=dueling_checkpoint,
+                ppo_checkpoint=ppo_checkpoint,
+                learned_model=learned_model,
+                workload=workload,
             )
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
+
+    @app.get("/impact-data")
+    def impact_data():
+        path = Path(os.getenv("IMPACT_SUMMARY", "artifacts/impact_summary.json"))
+        if not path.is_file():
+            raise HTTPException(
+                status_code=404,
+                detail="Run scripts/benchmark_chatbot.py and scripts/impact_report.py first",
+            )
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    @app.get("/impact", response_class=HTMLResponse)
+    def impact_page():
+        html_path = os.path.join(os.path.dirname(__file__), "impact.html")
+        with open(html_path, encoding="utf-8") as file:
+            return file.read()
 
     @app.get("/explorer", response_class=HTMLResponse)
     def explorer():

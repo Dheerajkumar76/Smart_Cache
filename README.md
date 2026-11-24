@@ -18,8 +18,8 @@ The project contains two experiment tracks:
    be evicted to admit one request.
 
 It also includes a FastAPI service and a browser-based Simulation Explorer for
-watching identical request streams replayed through DQN, LRU, LFU, and
-CostAware policies.
+watching identical request streams replayed through ten fixed-slot policies:
+LRU, LFU, FIFO, CostAware, GDSF, AdaptiveGDSF, LinUCB, DQN, Dueling DQN, and PPO.
 
 ## Status
 
@@ -27,6 +27,8 @@ Implemented:
 
 - Fixed-slot and byte-capacity cache simulators
 - LRU, LFU, CostAware, fixed-slot DQN, and byte-aware DQN policies
+- FIFO, GDSF, AdaptiveGDSF, LinUCB contextual bandit, fixed-slot Dueling DQN,
+  and PPO policies
 - Cost-weighted rewards and action masking
 - Double DQN targets with experience replay
 - Stationary and distribution-drift workloads
@@ -65,6 +67,11 @@ smart-cache-rl/
 ├── artifacts/
 │   ├── dqn_best.pt                    # fixed-slot best checkpoint
 │   ├── dqn_latest.pt                  # fixed-slot latest checkpoint
+│   ├── dueling_dqn_best.pt            # fixed-slot Dueling DQN best checkpoint
+│   ├── dueling_dqn_latest.pt          # fixed-slot Dueling DQN latest checkpoint
+│   ├── ppo_best.pt                    # fixed-slot PPO best checkpoint
+│   ├── ppo_latest.pt                  # fixed-slot PPO latest checkpoint
+│   ├── comprehensive_multi_algo_benchmark.csv # all-policy fixed-slot results
 │   ├── dqn_pre_mask_fix.pt            # fixed-slot comparison checkpoint
 │   ├── byte_dqn_best.pt               # byte-aware best checkpoint
 │   ├── byte_dqn_latest.pt             # byte-aware latest checkpoint
@@ -77,6 +84,9 @@ smart-cache-rl/
 │   ├── benchmark.py                    # fixed-slot baseline benchmark
 │   ├── benchmark_rl.py                 # fixed-slot DQN benchmark
 │   ├── train_dqn.py                   # fixed-slot DQN training
+│   ├── train_dueling_dqn.py           # fixed-slot Dueling DQN training
+│   ├── train_ppo.py                   # fixed-slot PPO training
+│   ├── benchmark_comprehensive.py     # all-policy fixed-slot benchmark
 │   ├── evaluate_generalization.py     # fixed-slot multi-seed evaluation
 │   ├── analyze_generalization.py      # paired bootstrap analysis
 │   ├── benchmark_byte.py              # byte-capacity baseline benchmark
@@ -107,6 +117,12 @@ smart-cache-rl/
 │   │   ├── lfu.py                     # least frequently used
 │   │   ├── cost_aware.py              # static cost-aware heuristic
 │   │   ├── dqn_policy.py              # fixed-slot DQN adapter
+│   │   ├── dueling_dqn_policy.py      # fixed-slot Dueling DQN adapter
+│   │   ├── ppo_policy.py              # fixed-slot PPO adapter
+│   │   ├── fifo.py                    # first in, first out
+│   │   ├── gdsf.py                    # GreedyDual-Size-Frequency
+│   │   ├── adaptive_gdsf.py           # GDSF with adaptive exponents
+│   │   ├── contextual_bandit.py       # LinUCB contextual bandit
 │   │   └── dqn_byte_policy.py         # byte-aware DQN adapter
 │   ├── runtime/
 │   │   ├── cache_service.py           # thread-safe in-memory cache
@@ -114,6 +130,8 @@ smart-cache-rl/
 │   │   └── redis_cache_service.py     # Redis-backed cache runtime
 │   └── training/
 │       ├── dqn_agent.py               # Q-network, Double DQN, checkpoints
+│       ├── dueling_dqn_agent.py       # dueling Q-network agent
+│       ├── ppo_agent.py               # actor-critic PPO agent
 │       └── replay_buffer.py           # masked transition replay
 ├── tests/
 │   ├── test_cache_simulator.py
@@ -454,9 +472,19 @@ metrics count only requests to `/objects/{key}`; opening UI pages does not
 generate cache traffic. Metrics reset when the server restarts.
 
 The Simulation Explorer replays one identical request trace through LRU, LFU,
-CostAware, and the compatible fixed-slot DQN checkpoint. It shows each
-request's hit/miss result, cache contents, evicted object, reward, policy
-overhead, and cumulative cost. This replay is separate from the live API cache
+FIFO, CostAware, GDSF, AdaptiveGDSF, LinUCB, and the compatible fixed-slot DQN,
+Dueling DQN, and PPO checkpoints. It shows each request's hit/miss result,
+cache contents, evicted object, reward, policy overhead, and cumulative cost.
+Policies are grouped by family and can be hidden; a "Focus policy" selector
+chooses which policy's decision and cache are shown in detail; the cumulative
+table is ranked by miss cost up to the current request and shows the change
+versus LRU. Every replay builds fresh policy instances, so stateful policies
+(GDSF, AdaptiveGDSF, LinUCB) do not carry state between replays.
+
+The learned checkpoints were trained for 3 slots. At any other capacity the
+explorer skips DQN, Dueling DQN, and PPO and says so on the page. Checkpoint
+paths can be overridden with `CACHE_SIMULATION_CHECKPOINT`,
+`CACHE_SIMULATION_DUELING_CHECKPOINT`, and `CACHE_SIMULATION_PPO_CHECKPOINT`. This replay is separate from the live API cache
 and does not change `/metrics`.
 
 The byte-aware DQN has a different observation/action space and should be

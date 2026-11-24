@@ -25,6 +25,15 @@
     .explanation { color: #c9dcf9; padding: 12px; background: #101a2b; border-left: 3px solid var(--accent); border-radius: 5px; }
     table { width: 100%; border-collapse: collapse; } th, td { padding: 9px; text-align: left; border-bottom: 1px solid var(--line); } th { color: var(--muted); }
     .winner { color: var(--good); font-weight: 700; } .timeline { max-height: 270px; overflow: auto; }
+    .filters { display: flex; flex-wrap: wrap; gap: 18px; margin: -8px 0 18px; }
+    .family { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .family b { color: var(--muted); font-weight: 600; margin-right: 2px; }
+    .chip { display: inline-flex; gap: 6px; align-items: center; padding: 5px 10px; border: 1px solid var(--line); border-radius: 99px; background: #101a2b; color: #eef4ff; cursor: pointer; user-select: none; }
+    .chip input { margin: 0; padding: 0; accent-color: var(--accent); }
+    .tag { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 1px 7px; white-space: nowrap; }
+    .notice { color: #fcd34d; margin-top: 8px; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .focusrow td { background: #13263f; }
     @media (max-width: 800px) { main { padding: 16px; } .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } }
   </style>
 </head>
@@ -34,6 +43,7 @@
   <div class="subtle">Replay the same request stream through every policy and inspect each hit, miss, eviction, reward, and cost. This offline replay does not update live API metrics.</div>
   <div id="runtime" class="subtle" style="margin-top:8px">Loading runtime information...</div>
   <div class="controls">
+    <label>Workload<select id="workload"><option value="demo">Demo (7 objects)</option><option value="chatbot">AI chatbot (5,000 questions)</option></select></label>
     <label>Scenario<select id="scenario"><option value="stationary">Stationary</option><option value="drifting">Drifting</option></select></label>
     <label>Seed<input id="seed" type="number" value="2026"></label>
     <label>Requests<input id="count" type="number" min="1" max="200" value="30"></label>
@@ -42,38 +52,97 @@
     <button id="prev" disabled>Previous</button>
     <button id="next" disabled>Next request</button>
     <button id="play" disabled>Play</button>
+    <label>Focus policy<select id="focus" disabled><option>—</option></select></label>
   </div>
+  <div id="filters" class="filters"></div>
+  <div id="notice" class="notice"></div>
   <div class="grid">
-    <section class="panel"><h2>Current request</h2><div id="request" class="subtle">Generate a simulation to begin.</div><h2 style="margin-top:20px">Policy decision</h2><div id="explanation" class="explanation">No request selected.</div><h2 style="margin-top:20px">Cache after decision</h2><div id="cache" class="cache"><span class="empty">No cache state yet.</span></div></section>
+    <section class="panel"><h2>Current request</h2><div id="request" class="subtle">Generate a simulation to begin.</div><h2 style="margin-top:20px">Policy decision · <span id="focusname">—</span></h2><div id="explanation" class="explanation">No request selected.</div><h2 style="margin-top:20px">Cache after decision</h2><div id="cache" class="cache"><span class="empty">No cache state yet.</span></div></section>
     <section class="panel"><h2>Policy comparison for this request</h2><div id="comparison" class="subtle">No simulation loaded.</div></section>
     <section class="panel wide"><h2>Cumulative comparison</h2><div id="summary" class="subtle">No simulation loaded.</div></section>
     <section class="panel wide"><h2>Request timeline</h2><div id="timeline" class="timeline subtle">No simulation loaded.</div></section>
   </div>
 </main>
 <script>
-let data = null, index = 0, timer = null;
+let data = null, index = 0, timer = null, focusName = null;
+const hidden = new Set();
+const FAMILY_ORDER = ['Learned (ours)', 'Classical', 'Modern baseline', 'Cost-aware heuristic', 'Contextual bandit', 'Deep RL', 'Other'];
+// Sensible defaults per workload: [requests, max requests, capacity].
+const WORKLOAD_DEFAULTS = {demo: [30, 200, 3], chatbot: [1000, 1000, 50]};
+const LEARNED = ['DQN', 'DuelingDQN', 'PPO'];
 const $ = id => document.getElementById(id);
 function esc(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Long caches (chatbot workload) are summarised so tables stay readable.
+function shortList(keys, limit = 6) {
+  if (!keys.length) return '—';
+  const shown = keys.slice(0, limit).map(esc).join(', ');
+  return keys.length > limit ? `${shown} … (+${keys.length - limit} more)` : shown;
+}
+function fmt(ms) { return ms.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}); }
 async function load() {
-  const q = new URLSearchParams({scenario: $('scenario').value, seed: $('seed').value, requests: $('count').value, capacity: $('capacity').value});
+  const q = new URLSearchParams({workload: $('workload').value, scenario: $('scenario').value, seed: $('seed').value, requests: $('count').value, capacity: $('capacity').value});
   $('load').disabled = true;
-  try { const response = await fetch('/simulation?' + q); if (!response.ok) throw new Error(await response.text()); data = await response.json(); index = 0; $('prev').disabled = false; $('next').disabled = false; $('play').disabled = false; render(); }
+  try {
+    const response = await fetch('/simulation?' + q); if (!response.ok) throw new Error(await response.text());
+    data = await response.json(); index = 0;
+    $('prev').disabled = false; $('next').disabled = false; $('play').disabled = false;
+    buildControls(); render();
+  }
   catch (error) { alert(error.message); } finally { $('load').disabled = false; }
 }
-function currentRows() { return data.policies.map(p => ({policy: p.policy, step: p.steps[index]})); }
+function buildControls() {
+  const names = data.policies.map(p => p.policy);
+  if (!focusName || !names.includes(focusName)) focusName = ['LearnedValue', 'DQN'].find(n => names.includes(n)) || names[0];
+  $('focus').innerHTML = names.map(n => `<option ${n === focusName ? 'selected' : ''}>${esc(n)}</option>`).join('');
+  $('focus').disabled = false;
+  const groups = {};
+  data.policies.forEach(p => (groups[p.family] = groups[p.family] || []).push(p.policy));
+  $('filters').innerHTML = FAMILY_ORDER.filter(f => groups[f]).map(f => `<div class="family"><b>${esc(f)}</b>${groups[f].map(n => `<label class="chip"><input type="checkbox" data-policy="${esc(n)}" ${hidden.has(n) ? '' : 'checked'}>${esc(n)}</label>`).join('')}</div>`).join('');
+  $('filters').querySelectorAll('input').forEach(box => box.onchange = () => { box.checked ? hidden.delete(box.dataset.policy) : hidden.add(box.dataset.policy); render(); });
+  const missing = LEARNED.filter(n => !names.includes(n));
+  $('notice').textContent = missing.length ? `${missing.join(', ')} not shown: the trained checkpoints are for 3 slots (or were not found), so they are skipped at capacity ${data.capacity}.` : '';
+}
+function visible() { return data.policies.filter(p => !hidden.has(p.policy)); }
+function currentRows() { return visible().map(p => ({policy: p.policy, family: p.family, step: p.steps[index]})); }
 function render() {
-  const rows = currentRows(), reference = rows[0].step, req = reference.request;
-  $('request').innerHTML = `<strong>Request ${index + 1} / ${data.requests.length}: ${esc(req.key)}</strong><span>${req.cost} ms retrieval cost</span><span>${req.size} bytes</span><span class="subtle">Replay trace</span>`;
-  const dqn = rows.find(r => r.policy === 'DQN');
-  const focus = dqn || rows[0];
+  const all = data.policies.map(p => ({policy: p.policy, family: p.family, step: p.steps[index]}));
+  const rows = currentRows(), req = all[0].step.request;
+  $('request').innerHTML = `<strong>Request ${index + 1} / ${data.requests.length}: ${esc(req.key)}</strong> · <span>${req.cost} ms retrieval cost</span> · <span>${req.size} bytes</span> · <span class="subtle">Replay trace</span>`;
+  const focus = all.find(r => r.policy === focusName) || all[0];
+  $('focusname').textContent = focus.policy;
   $('explanation').innerHTML = `<span class="badge ${focus.step.result === 'HIT' ? 'hit' : 'miss'}">${focus.step.result}</span> ${esc(focus.step.explanation)}<br><small>Reward: ${focus.step.reward.toFixed(1)} | Policy time: ${focus.step.policy_time_ms.toFixed(3)} ms</small>`;
-  $('cache').innerHTML = focus.step.after_cache.length ? focus.step.after_cache.map((key, i) => `<span class="slot">Slot ${i}: ${esc(key)}</span>`).join('') : '<span class="empty">Cache is empty</span>';
-  $('comparison').innerHTML = `<table><tr><th>Policy</th><th>Result</th><th>Evicted</th><th>Reward</th><th>Cache after</th></tr>${rows.map(r => `<tr><td>${esc(r.policy)}</td><td class="${r.step.result === 'HIT' ? 'winner' : ''}">${r.step.result}</td><td>${esc(r.step.evicted || '—')}</td><td>${r.step.reward.toFixed(1)}</td><td>${r.step.after_cache.map(esc).join(', ') || '—'}</td></tr>`).join('')}</table>`;
-  $('summary').innerHTML = `<table><tr><th>Policy</th><th>Hit ratio</th><th>Miss cost</th><th>Policy overhead</th><th>Net cost</th></tr>${data.policies.map(p => `<tr><td>${esc(p.policy)}</td><td>${(p.summary.hit_ratio * 100).toFixed(1)}%</td><td>${p.steps[index].cumulative_miss_cost_ms.toFixed(1)} ms</td><td>${p.summary.policy_time_ms.toFixed(3)} ms</td><td>${p.summary.net_cost_ms.toFixed(1)} ms</td></tr>`).join('')}</table>`;
+  const slots = focus.step.after_cache;
+  $('cache').innerHTML = slots.length
+    ? slots.slice(0, 24).map((key, i) => `<span class="slot">Slot ${i}: ${esc(key)}</span>`).join('') + (slots.length > 24 ? `<span class="empty">… and ${slots.length - 24} more</span>` : '')
+    : '<span class="empty">Cache is empty</span>';
+  if (!rows.length) { ['comparison', 'summary', 'timeline'].forEach(id => $(id).innerHTML = '<span class="subtle">All policies are hidden. Tick a policy above to show it.</span>'); return; }
+  const rowClass = name => name === focus.policy ? ' class="focusrow"' : '';
+  $('comparison').innerHTML = `<table><tr><th>Policy</th><th>Result</th><th>Evicted</th><th class="num">Reward</th><th>Cache after</th></tr>${rows.map(r => `<tr${rowClass(r.policy)}><td>${esc(r.policy)}</td><td class="${r.step.result === 'HIT' ? 'winner' : ''}">${r.step.result}</td><td>${esc(r.step.evicted || '—')}</td><td class="num">${r.step.reward.toFixed(1)}</td><td>${shortList(r.step.after_cache)}</td></tr>`).join('')}</table>`;
+  // Cumulative figures are up to the current request so they stay in step with playback.
+  const cum = visible().map(p => {
+    const upto = p.steps.slice(0, index + 1);
+    const hits = upto.filter(s => s.result === 'HIT').length;
+    const overhead = upto.reduce((a, s) => a + s.policy_time_ms, 0);
+    const cost = p.steps[index].cumulative_miss_cost_ms;
+    return {policy: p.policy, family: p.family, hitRatio: hits / upto.length, cost, overhead, net: cost + overhead};
+  });
+  const lruRow = data.policies.find(p => p.policy === 'LRU');
+  const lruCost = lruRow ? lruRow.steps[index].cumulative_miss_cost_ms : null;
+  const best = Math.min(...cum.map(c => c.cost));
+  cum.sort((a, b) => a.cost - b.cost);
+  $('summary').innerHTML = `<div class="subtle" style="margin-bottom:8px">Totals up to request ${index + 1}, sorted by miss cost (lowest first).</div><table><tr><th>Policy</th><th>Family</th><th class="num">Hit ratio</th><th class="num">Miss cost</th><th class="num">vs LRU</th><th class="num">Policy overhead</th><th class="num">Net cost</th></tr>${cum.map(c => {
+    const vs = lruCost ? ((lruCost - c.cost) / lruCost * 100) : null;
+    return `<tr${rowClass(c.policy)}><td class="${c.cost === best ? 'winner' : ''}">${esc(c.policy)}${c.cost === best ? ' ★' : ''}</td><td><span class="tag">${esc(c.family)}</span></td><td class="num">${(c.hitRatio * 100).toFixed(1)}%</td><td class="num">${fmt(c.cost)} ms</td><td class="num">${vs === null ? '—' : (vs >= 0 ? '+' : '') + vs.toFixed(1) + '%'}</td><td class="num">${c.overhead.toFixed(3)} ms</td><td class="num">${fmt(c.net)} ms</td></tr>`;
+  }).join('')}</table>`;
   $('timeline').innerHTML = rows.map(r => `<div style="padding:5px 0"><strong>${esc(r.policy)}</strong> · ${r.step.result} · ${esc(r.step.request.key)} ${r.step.evicted ? '· evicted ' + esc(r.step.evicted) : ''}</div>`).join('');
 }
 function move(delta) { if (!data) return; index = Math.max(0, Math.min(data.requests.length - 1, index + delta)); render(); }
 $('load').onclick = load; $('prev').onclick = () => move(-1); $('next').onclick = () => move(1);
+$('focus').onchange = () => { focusName = $('focus').value; render(); };
+$('workload').onchange = () => {
+  const [count, max, capacity] = WORKLOAD_DEFAULTS[$('workload').value];
+  $('count').value = count; $('count').max = max; $('capacity').value = capacity;
+};
 $('play').onclick = () => { if (timer) { clearInterval(timer); timer = null; $('play').textContent = 'Play'; } else { $('play').textContent = 'Pause'; timer = setInterval(() => { if (index >= data.requests.length - 1) { clearInterval(timer); timer = null; $('play').textContent = 'Play'; } else move(1); }, 900); } };
 fetch('/runtime-info').then(response => response.json()).then(info => {
   $('runtime').textContent = `Live API origin: ${info.origin_backend} · policy: ${info.policy} · byte capacity: ${info.capacity_bytes.toLocaleString()} · objects: ${info.objects.length}`;

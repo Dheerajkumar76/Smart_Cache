@@ -1,0 +1,685 @@
+{
+  "assumptions": {
+    "price_inr_per_1k_output_tokens": 0.5,
+    "energy_wh_per_1k_output_tokens": 0.6,
+    "grid_kg_co2_per_kwh": 0.727,
+    "time_to_first_token_ms": 300.0,
+    "ms_per_token": 12.0
+  },
+  "per_questions": 1000000,
+  "capacity": 100,
+  "scenarios": {
+    "stationary": {
+      "no_cache": {
+        "llm_calls": 1000000.0,
+        "output_tokens": 234529719.99999997,
+        "cost_inr": 117264.85999999997,
+        "energy_kwh": 140.71783199999996,
+        "co2_kg": 102.30186386399997,
+        "user_wait_hours": 865.0990666666667
+      },
+      "policies": {
+        "LRU": {
+          "impact": {
+            "llm_calls": 690700.0,
+            "output_tokens": 167124640.0,
+            "cost_inr": 83562.32,
+            "energy_kwh": 100.27478400000001,
+            "co2_kg": 72.899767968,
+            "user_wait_hours": 614.6404666666667
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 309300.0,
+            "output_tokens": 67405079.99999997,
+            "cost_inr": 33702.539999999964,
+            "energy_kwh": 40.44304799999995,
+            "co2_kg": 29.402095895999963,
+            "user_wait_hours": 250.45859999999993
+          },
+          "saved_vs_lru": {
+            "llm_calls": 0.0,
+            "output_tokens": 0.0,
+            "cost_inr": 0.0,
+            "energy_kwh": 0.0,
+            "co2_kg": 0.0,
+            "user_wait_hours": 0.0
+          }
+        },
+        "LFU": {
+          "impact": {
+            "llm_calls": 590390.0,
+            "output_tokens": 143262570.0,
+            "cost_inr": 71631.285,
+            "energy_kwh": 85.957542,
+            "co2_kg": 62.491133034,
+            "user_wait_hours": 526.7410666666667
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 409610.0,
+            "output_tokens": 91267149.99999997,
+            "cost_inr": 45633.57499999997,
+            "energy_kwh": 54.760289999999955,
+            "co2_kg": 39.81073082999997,
+            "user_wait_hours": 338.35799999999995
+          },
+          "saved_vs_lru": {
+            "llm_calls": 100310.0,
+            "output_tokens": 23862070.0,
+            "cost_inr": 11931.035000000003,
+            "energy_kwh": 14.317242000000007,
+            "co2_kg": 10.408634934000006,
+            "user_wait_hours": 87.89940000000001
+          }
+        },
+        "FIFO": {
+          "impact": {
+            "llm_calls": 730770.0,
+            "output_tokens": 175671510.0,
+            "cost_inr": 87835.75499999999,
+            "energy_kwh": 105.40290599999997,
+            "co2_kg": 76.62791266199997,
+            "user_wait_hours": 646.4692
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 269230.0,
+            "output_tokens": 58858209.99999997,
+            "cost_inr": 29429.10499999998,
+            "energy_kwh": 35.314925999999986,
+            "co2_kg": 25.673951201999998,
+            "user_wait_hours": 218.62986666666666
+          },
+          "saved_vs_lru": {
+            "llm_calls": -40070.0,
+            "output_tokens": -8546870.0,
+            "cost_inr": -4273.434999999983,
+            "energy_kwh": -5.128121999999962,
+            "co2_kg": -3.7281446939999654,
+            "user_wait_hours": -31.828733333333275
+          }
+        },
+        "SIEVE": {
+          "impact": {
+            "llm_calls": 586790.0,
+            "output_tokens": 142548310.0,
+            "cost_inr": 71274.155,
+            "energy_kwh": 85.52898599999999,
+            "co2_kg": 62.179572822,
+            "user_wait_hours": 524.0602
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 413210.0,
+            "output_tokens": 91981409.99999997,
+            "cost_inr": 45990.70499999997,
+            "energy_kwh": 55.18884599999997,
+            "co2_kg": 40.12229104199997,
+            "user_wait_hours": 341.03886666666665
+          },
+          "saved_vs_lru": {
+            "llm_calls": 103910.0,
+            "output_tokens": 24576330.0,
+            "cost_inr": 12288.165000000008,
+            "energy_kwh": 14.745798000000022,
+            "co2_kg": 10.720195146000009,
+            "user_wait_hours": 90.58026666666672
+          }
+        },
+        "S3-FIFO": {
+          "impact": {
+            "llm_calls": 577460.0,
+            "output_tokens": 139978330.0,
+            "cost_inr": 69989.16500000001,
+            "energy_kwh": 83.986998,
+            "co2_kg": 61.058547546,
+            "user_wait_hours": 514.7161000000001
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 422540.0,
+            "output_tokens": 94551389.99999997,
+            "cost_inr": 47275.69499999996,
+            "energy_kwh": 56.73083399999996,
+            "co2_kg": 41.24331631799997,
+            "user_wait_hours": 350.38296666666656
+          },
+          "saved_vs_lru": {
+            "llm_calls": 113240.0,
+            "output_tokens": 27146310.0,
+            "cost_inr": 13573.154999999999,
+            "energy_kwh": 16.28778600000001,
+            "co2_kg": 11.841220422000006,
+            "user_wait_hours": 99.92436666666663
+          }
+        },
+        "CostAware": {
+          "impact": {
+            "llm_calls": 685510.0,
+            "output_tokens": 166379870.0,
+            "cost_inr": 83189.935,
+            "energy_kwh": 99.827922,
+            "co2_kg": 72.57489929399999,
+            "user_wait_hours": 611.7254
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 314490.0,
+            "output_tokens": 68149849.99999997,
+            "cost_inr": 34074.924999999974,
+            "energy_kwh": 40.88990999999996,
+            "co2_kg": 29.72696456999998,
+            "user_wait_hours": 253.37366666666662
+          },
+          "saved_vs_lru": {
+            "llm_calls": 5190.0,
+            "output_tokens": 744770.0,
+            "cost_inr": 372.3850000000093,
+            "energy_kwh": 0.4468620000000101,
+            "co2_kg": 0.3248686740000153,
+            "user_wait_hours": 2.9150666666666893
+          }
+        },
+        "EvictCheapest": {
+          "impact": {
+            "llm_calls": 949640.0,
+            "output_tokens": 210529580.00000003,
+            "cost_inr": 105264.79000000002,
+            "energy_kwh": 126.317748,
+            "co2_kg": 91.833002796,
+            "user_wait_hours": 780.9019333333333
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 50360.0,
+            "output_tokens": 24000139.99999994,
+            "cost_inr": 12000.069999999949,
+            "energy_kwh": 14.400083999999964,
+            "co2_kg": 10.468861067999967,
+            "user_wait_hours": 84.19713333333334
+          },
+          "saved_vs_lru": {
+            "llm_calls": -258940.0,
+            "output_tokens": -43404940.00000003,
+            "cost_inr": -21702.470000000016,
+            "energy_kwh": -26.042963999999984,
+            "co2_kg": -18.933234827999996,
+            "user_wait_hours": -166.2614666666666
+          }
+        },
+        "GDSF": {
+          "impact": {
+            "llm_calls": 624210.0,
+            "output_tokens": 150662440.0,
+            "cost_inr": 75331.22,
+            "energy_kwh": 90.397464,
+            "co2_kg": 65.718956328,
+            "user_wait_hours": 554.2256333333333
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 375790.0,
+            "output_tokens": 83867279.99999997,
+            "cost_inr": 41933.63999999997,
+            "energy_kwh": 50.32036799999996,
+            "co2_kg": 36.582907535999965,
+            "user_wait_hours": 310.8734333333333
+          },
+          "saved_vs_lru": {
+            "llm_calls": 66490.0,
+            "output_tokens": 16462200.0,
+            "cost_inr": 8231.100000000006,
+            "energy_kwh": 9.877320000000012,
+            "co2_kg": 7.180811640000002,
+            "user_wait_hours": 60.41483333333338
+          }
+        },
+        "AdaptiveGDSF": {
+          "impact": {
+            "llm_calls": 626690.0,
+            "output_tokens": 149717510.0,
+            "cost_inr": 74858.75499999999,
+            "energy_kwh": 89.83050599999999,
+            "co2_kg": 65.30677786199999,
+            "user_wait_hours": 551.2825333333333
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 373310.0,
+            "output_tokens": 84812209.99999997,
+            "cost_inr": 42406.10499999998,
+            "energy_kwh": 50.88732599999997,
+            "co2_kg": 36.99508600199998,
+            "user_wait_hours": 313.8165333333334
+          },
+          "saved_vs_lru": {
+            "llm_calls": 64010.0,
+            "output_tokens": 17407130.0,
+            "cost_inr": 8703.565000000017,
+            "energy_kwh": 10.444278000000025,
+            "co2_kg": 7.592990106000016,
+            "user_wait_hours": 63.35793333333345
+          }
+        },
+        "LearnedValue": {
+          "impact": {
+            "llm_calls": 579940.0,
+            "output_tokens": 132404809.99999999,
+            "cost_inr": 66202.40499999998,
+            "energy_kwh": 79.44288599999999,
+            "co2_kg": 57.75497812199999,
+            "user_wait_hours": 489.6777
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 420060.0,
+            "output_tokens": 102124909.99999999,
+            "cost_inr": 51062.45499999999,
+            "energy_kwh": 61.27494599999997,
+            "co2_kg": 44.54688574199998,
+            "user_wait_hours": 375.42136666666664
+          },
+          "saved_vs_lru": {
+            "llm_calls": 110760.0,
+            "output_tokens": 34719830.000000015,
+            "cost_inr": 17359.915000000023,
+            "energy_kwh": 20.831898000000024,
+            "co2_kg": 15.144789846000016,
+            "user_wait_hours": 124.96276666666671
+          }
+        },
+        "Belady": {
+          "impact": {
+            "llm_calls": 477480.0,
+            "output_tokens": 115864070.0,
+            "cost_inr": 57932.034999999996,
+            "energy_kwh": 69.518442,
+            "co2_kg": 50.53990733399999,
+            "user_wait_hours": 426.0035666666667
+          },
+          "reference": true,
+          "saved_vs_no_cache": {
+            "llm_calls": 522520.0,
+            "output_tokens": 118665649.99999997,
+            "cost_inr": 59332.824999999975,
+            "energy_kwh": 71.19938999999997,
+            "co2_kg": 51.76195652999998,
+            "user_wait_hours": 439.09549999999996
+          },
+          "saved_vs_lru": {
+            "llm_calls": 213220.0,
+            "output_tokens": 51260570.0,
+            "cost_inr": 25630.28500000001,
+            "energy_kwh": 30.756342000000018,
+            "co2_kg": 22.359860634000015,
+            "user_wait_hours": 188.63690000000003
+          }
+        },
+        "CostBelady": {
+          "impact": {
+            "llm_calls": 487830.0,
+            "output_tokens": 111342290.00000001,
+            "cost_inr": 55671.145000000004,
+            "energy_kwh": 66.805374,
+            "co2_kg": 48.567506898,
+            "user_wait_hours": 411.7934666666667
+          },
+          "reference": true,
+          "saved_vs_no_cache": {
+            "llm_calls": 512170.0,
+            "output_tokens": 123187429.99999996,
+            "cost_inr": 61593.71499999997,
+            "energy_kwh": 73.91245799999996,
+            "co2_kg": 53.73435696599997,
+            "user_wait_hours": 453.30559999999997
+          },
+          "saved_vs_lru": {
+            "llm_calls": 202870.0,
+            "output_tokens": 55782349.999999985,
+            "cost_inr": 27891.175000000003,
+            "energy_kwh": 33.46941000000001,
+            "co2_kg": 24.33226107000001,
+            "user_wait_hours": 202.84700000000004
+          }
+        }
+      }
+    },
+    "drifting": {
+      "no_cache": {
+        "llm_calls": 1000000.0,
+        "output_tokens": 237416569.99999997,
+        "cost_inr": 118708.28499999997,
+        "energy_kwh": 142.44994199999996,
+        "co2_kg": 103.56110783399997,
+        "user_wait_hours": 874.7218999999999
+      },
+      "policies": {
+        "LRU": {
+          "impact": {
+            "llm_calls": 689970.0,
+            "output_tokens": 166807700.0,
+            "cost_inr": 83403.85,
+            "energy_kwh": 100.08462,
+            "co2_kg": 72.76151874,
+            "user_wait_hours": 613.5231666666667
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 310030.0,
+            "output_tokens": 70608869.99999997,
+            "cost_inr": 35304.43499999997,
+            "energy_kwh": 42.36532199999996,
+            "co2_kg": 30.79958909399997,
+            "user_wait_hours": 261.19873333333317
+          },
+          "saved_vs_lru": {
+            "llm_calls": 0.0,
+            "output_tokens": 0.0,
+            "cost_inr": 0.0,
+            "energy_kwh": 0.0,
+            "co2_kg": 0.0,
+            "user_wait_hours": 0.0
+          }
+        },
+        "LFU": {
+          "impact": {
+            "llm_calls": 773230.0,
+            "output_tokens": 185750420.0,
+            "cost_inr": 92875.20999999999,
+            "energy_kwh": 111.45025199999998,
+            "co2_kg": 81.02433320399999,
+            "user_wait_hours": 683.6039
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 226770.0,
+            "output_tokens": 51666149.99999997,
+            "cost_inr": 25833.074999999983,
+            "energy_kwh": 30.999689999999987,
+            "co2_kg": 22.536774629999982,
+            "user_wait_hours": 191.11799999999994
+          },
+          "saved_vs_lru": {
+            "llm_calls": -83260.0,
+            "output_tokens": -18942720.0,
+            "cost_inr": -9471.359999999986,
+            "energy_kwh": -11.365631999999977,
+            "co2_kg": -8.262814463999987,
+            "user_wait_hours": -70.08073333333323
+          }
+        },
+        "FIFO": {
+          "impact": {
+            "llm_calls": 730140.0,
+            "output_tokens": 175728540.0,
+            "cost_inr": 87864.27,
+            "energy_kwh": 105.43712400000003,
+            "co2_kg": 76.65278914800002,
+            "user_wait_hours": 646.6068
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 269860.0,
+            "output_tokens": 61688029.99999997,
+            "cost_inr": 30844.01499999997,
+            "energy_kwh": 37.01281799999994,
+            "co2_kg": 26.908318685999944,
+            "user_wait_hours": 228.11509999999987
+          },
+          "saved_vs_lru": {
+            "llm_calls": -40170.0,
+            "output_tokens": -8920840.0,
+            "cost_inr": -4460.419999999998,
+            "energy_kwh": -5.352504000000025,
+            "co2_kg": -3.8912704080000253,
+            "user_wait_hours": -33.083633333333296
+          }
+        },
+        "SIEVE": {
+          "impact": {
+            "llm_calls": 629590.0,
+            "output_tokens": 152593030.0,
+            "cost_inr": 76296.515,
+            "energy_kwh": 91.555818,
+            "co2_kg": 66.561079686,
+            "user_wait_hours": 561.1092666666667
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 370410.0,
+            "output_tokens": 84823539.99999997,
+            "cost_inr": 42411.769999999975,
+            "energy_kwh": 50.89412399999996,
+            "co2_kg": 37.00002814799997,
+            "user_wait_hours": 313.6126333333332
+          },
+          "saved_vs_lru": {
+            "llm_calls": 60380.0,
+            "output_tokens": 14214670.0,
+            "cost_inr": 7107.335000000006,
+            "energy_kwh": 8.528801999999999,
+            "co2_kg": 6.200439054,
+            "user_wait_hours": 52.41390000000001
+          }
+        },
+        "S3-FIFO": {
+          "impact": {
+            "llm_calls": 594640.0,
+            "output_tokens": 144113610.0,
+            "cost_inr": 72056.805,
+            "energy_kwh": 86.468166,
+            "co2_kg": 62.862356682,
+            "user_wait_hours": 529.9320333333333
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 405360.0,
+            "output_tokens": 93302959.99999997,
+            "cost_inr": 46651.47999999998,
+            "energy_kwh": 55.98177599999997,
+            "co2_kg": 40.69875115199997,
+            "user_wait_hours": 344.7898666666666
+          },
+          "saved_vs_lru": {
+            "llm_calls": 95330.0,
+            "output_tokens": 22694090.0,
+            "cost_inr": 11347.045000000013,
+            "energy_kwh": 13.616454000000004,
+            "co2_kg": 9.899162058000002,
+            "user_wait_hours": 83.59113333333346
+          }
+        },
+        "CostAware": {
+          "impact": {
+            "llm_calls": 685090.0,
+            "output_tokens": 166069940.0,
+            "cost_inr": 83034.97000000002,
+            "energy_kwh": 99.641964,
+            "co2_kg": 72.439707828,
+            "user_wait_hours": 610.6573
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 314910.0,
+            "output_tokens": 71346629.99999997,
+            "cost_inr": 35673.31499999996,
+            "energy_kwh": 42.80797799999996,
+            "co2_kg": 31.121400005999973,
+            "user_wait_hours": 264.0645999999999
+          },
+          "saved_vs_lru": {
+            "llm_calls": 4880.0,
+            "output_tokens": 737760.0,
+            "cost_inr": 368.8799999999901,
+            "energy_kwh": 0.4426559999999995,
+            "co2_kg": 0.32181091200000367,
+            "user_wait_hours": 2.8658666666667614
+          }
+        },
+        "EvictCheapest": {
+          "impact": {
+            "llm_calls": 950229.9999999999,
+            "output_tokens": 213499000.0,
+            "cost_inr": 106749.49999999999,
+            "energy_kwh": 128.0994,
+            "co2_kg": 93.1282638,
+            "user_wait_hours": 790.8491666666666
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 49770.00000000012,
+            "output_tokens": 23917569.99999997,
+            "cost_inr": 11958.784999999989,
+            "energy_kwh": 14.350541999999962,
+            "co2_kg": 10.43284403399997,
+            "user_wait_hours": 83.87273333333326
+          },
+          "saved_vs_lru": {
+            "llm_calls": -260259.99999999988,
+            "output_tokens": -46691300.0,
+            "cost_inr": -23345.64999999998,
+            "energy_kwh": -28.014780000000002,
+            "co2_kg": -20.36674506,
+            "user_wait_hours": -177.3259999999999
+          }
+        },
+        "GDSF": {
+          "impact": {
+            "llm_calls": 650130.0,
+            "output_tokens": 156647390.0,
+            "cost_inr": 78323.695,
+            "energy_kwh": 93.98843400000001,
+            "co2_kg": 68.32959151800002,
+            "user_wait_hours": 576.3354666666668
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 349870.0,
+            "output_tokens": 80769179.99999997,
+            "cost_inr": 40384.58999999997,
+            "energy_kwh": 48.46150799999995,
+            "co2_kg": 35.231516315999954,
+            "user_wait_hours": 298.3864333333331
+          },
+          "saved_vs_lru": {
+            "llm_calls": 39840.0,
+            "output_tokens": 10160310.0,
+            "cost_inr": 5080.154999999999,
+            "energy_kwh": 6.096185999999989,
+            "co2_kg": 4.431927221999985,
+            "user_wait_hours": 37.18769999999995
+          }
+        },
+        "AdaptiveGDSF": {
+          "impact": {
+            "llm_calls": 652730.0,
+            "output_tokens": 155928470.0,
+            "cost_inr": 77964.235,
+            "energy_kwh": 93.557082,
+            "co2_kg": 68.015998614,
+            "user_wait_hours": 574.1557333333333
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 347270.0,
+            "output_tokens": 81488099.99999997,
+            "cost_inr": 40744.049999999974,
+            "energy_kwh": 48.89285999999997,
+            "co2_kg": 35.54510921999997,
+            "user_wait_hours": 300.5661666666666
+          },
+          "saved_vs_lru": {
+            "llm_calls": 37240.0,
+            "output_tokens": 10879230.0,
+            "cost_inr": 5439.615000000005,
+            "energy_kwh": 6.527538000000007,
+            "co2_kg": 4.745520126000002,
+            "user_wait_hours": 39.36743333333345
+          }
+        },
+        "LearnedValue": {
+          "impact": {
+            "llm_calls": 607260.0,
+            "output_tokens": 138901010.0,
+            "cost_inr": 69450.505,
+            "energy_kwh": 83.340606,
+            "co2_kg": 60.588620561999996,
+            "user_wait_hours": 513.6083666666666
+          },
+          "reference": false,
+          "saved_vs_no_cache": {
+            "llm_calls": 392740.0,
+            "output_tokens": 98515559.99999997,
+            "cost_inr": 49257.77999999997,
+            "energy_kwh": 59.10933599999997,
+            "co2_kg": 42.972487271999974,
+            "user_wait_hours": 361.1135333333333
+          },
+          "saved_vs_lru": {
+            "llm_calls": 82710.0,
+            "output_tokens": 27906690.0,
+            "cost_inr": 13953.345000000001,
+            "energy_kwh": 16.744014000000007,
+            "co2_kg": 12.172898178000004,
+            "user_wait_hours": 99.91480000000013
+          }
+        },
+        "Belady": {
+          "impact": {
+            "llm_calls": 480539.99999999994,
+            "output_tokens": 116444059.99999999,
+            "cost_inr": 58222.03,
+            "energy_kwh": 69.866436,
+            "co2_kg": 50.79289897199999,
+            "user_wait_hours": 428.19186666666667
+          },
+          "reference": true,
+          "saved_vs_no_cache": {
+            "llm_calls": 519460.00000000006,
+            "output_tokens": 120972509.99999999,
+            "cost_inr": 60486.254999999976,
+            "energy_kwh": 72.58350599999997,
+            "co2_kg": 52.76820886199998,
+            "user_wait_hours": 446.5300333333332
+          },
+          "saved_vs_lru": {
+            "llm_calls": 209430.00000000006,
+            "output_tokens": 50363640.000000015,
+            "cost_inr": 25181.820000000007,
+            "energy_kwh": 30.218184000000008,
+            "co2_kg": 21.96861976800001,
+            "user_wait_hours": 185.33130000000006
+          }
+        },
+        "CostBelady": {
+          "impact": {
+            "llm_calls": 490380.0,
+            "output_tokens": 112037950.0,
+            "cost_inr": 56018.975,
+            "energy_kwh": 67.22277,
+            "co2_kg": 48.87095379,
+            "user_wait_hours": 414.32483333333334
+          },
+          "reference": true,
+          "saved_vs_no_cache": {
+            "llm_calls": 509620.0,
+            "output_tokens": 125378619.99999997,
+            "cost_inr": 62689.309999999976,
+            "energy_kwh": 75.22717199999997,
+            "co2_kg": 54.69015404399997,
+            "user_wait_hours": 460.39706666666655
+          },
+          "saved_vs_lru": {
+            "llm_calls": 199590.0,
+            "output_tokens": 54769750.0,
+            "cost_inr": 27384.875000000007,
+            "energy_kwh": 32.861850000000004,
+            "co2_kg": 23.890564949999998,
+            "user_wait_hours": 199.19833333333338
+          }
+        }
+      }
+    }
+  }
+}

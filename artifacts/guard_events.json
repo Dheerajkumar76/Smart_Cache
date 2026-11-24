@@ -1,0 +1,58 @@
+[
+  {
+    "event": "switch_to_fallback",
+    "timestamp": 2000,
+    "real": 5511720.0,
+    "shadow": 4356732.0
+  },
+  {
+    "event": "retry_primary",
+    "timestamp": 7000
+  },
+  {
+    "event": "switch_to_fallback",
+    "timestamp": 7750,
+    "real": 4972056.0,
+    "shadow": 4552368.0
+  },
+  {
+    "event": "retry_primary",
+    "timestamp": 12750
+  },
+  {
+    "event": "switch_to_fallback",
+    "timestamp": 13250,
+    "real": 4617912.0,
+    "shadow": 4373352.0
+  },
+  {
+    "event": "retry_primary",
+    "timestamp": 18250
+  },
+  {
+    "event": "switch_to_fallback",
+    "timestamp": 18750,
+    "real": 4738404.0,
+    "shadow": 4472208.0
+  },
+  {
+    "event": "retry_primary",
+    "timestamp": 23750
+  },
+  {
+    "event": "switch_to_fallback",
+    "timestamp": 24250,
+    "real": 4502904.0,
+    "shadow": 4234140.0
+  },
+  {
+    "event": "retry_primary",
+    "timestamp": 29250
+  },
+  {
+    "event": "switch_to_fallback",
+    "timestamp": 29750,
+    "real": 4767456.0,
+    "shadow": 4518888.0
+  }
+]

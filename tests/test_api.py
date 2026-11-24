@@ -1,3 +1,4 @@
+from pathlib import Path
 from fastapi.testclient import TestClient
 
 from smartcache.api.app import create_app
@@ -89,6 +90,21 @@ def test_invalid_checkpoint_uses_explicit_fallback(monkeypatch):
     assert app.state.cache.policy.name == "LRU"
 
 
+BASE_SIMULATION_POLICIES = [
+    "LRU",
+    "LFU",
+    "FIFO",
+    "SIEVE",
+    "S3-FIFO",
+    "CostAware",
+    "EvictCheapest",
+    "GDSF",
+    "AdaptiveGDSF",
+    "LinUCB_Bandit",
+]
+ALL_SIMULATION_POLICIES = BASE_SIMULATION_POLICIES + ["DQN", "DuelingDQN", "PPO"]
+
+
 def test_simulation_uses_fixed_slot_dqn_checkpoint():
     result = build_simulation(
         scenario="stationary",
@@ -96,11 +112,61 @@ def test_simulation_uses_fixed_slot_dqn_checkpoint():
         requests_count=5,
         capacity=3,
         checkpoint="artifacts/dqn_best.pt",
+        dueling_checkpoint="artifacts/dueling_dqn_best.pt",
+        ppo_checkpoint="artifacts/ppo_best.pt",
     )
 
-    assert [policy["policy"] for policy in result["policies"]] == [
-        "LRU",
-        "LFU",
-        "CostAware",
-        "DQN",
-    ]
+    assert [policy["policy"] for policy in result["policies"]] == (
+        ALL_SIMULATION_POLICIES
+    )
+    families = {policy["policy"]: policy["family"] for policy in result["policies"]}
+    assert families["LinUCB_Bandit"] == "Contextual bandit"
+    assert families["PPO"] == "Deep RL"
+
+
+def test_simulation_skips_learned_models_for_other_capacities():
+    result = build_simulation(
+        scenario="drifting",
+        seed=7,
+        requests_count=40,
+        capacity=4,
+        checkpoint="artifacts/dqn_best.pt",
+        dueling_checkpoint="artifacts/dueling_dqn_best.pt",
+        ppo_checkpoint="artifacts/ppo_best.pt",
+    )
+
+    assert [policy["policy"] for policy in result["policies"]] == (
+        BASE_SIMULATION_POLICIES
+    )
+
+
+def test_simulation_endpoint_includes_new_policies():
+    app = create_app(cache_backend="memory")
+    with TestClient(app) as client:
+        response = client.get(
+            "/simulation",
+            params={"scenario": "drifting", "seed": 11, "requests": 60, "capacity": 3},
+        )
+
+    assert response.status_code == 200
+    names = [policy["policy"] for policy in response.json()["policies"]]
+    expected = BASE_SIMULATION_POLICIES + ["DQN", "DuelingDQN", "PPO"]
+    if Path("artifacts/learned_value.npz").is_file():
+        expected = BASE_SIMULATION_POLICIES + ["LearnedValue", "DQN", "DuelingDQN", "PPO"]
+    assert names == expected
+
+
+def test_simulation_replays_are_independent():
+    kwargs = dict(
+        scenario="drifting", seed=99, requests_count=120, capacity=3, checkpoint=None
+    )
+    first = build_simulation(**kwargs)
+    second = build_simulation(**kwargs)
+
+    def outcomes(result):
+        return [
+            (p["policy"], p["summary"]["hits"], p["summary"]["total_miss_cost_ms"])
+            for p in result["policies"]
+        ]
+
+    assert outcomes(first) == outcomes(second)
