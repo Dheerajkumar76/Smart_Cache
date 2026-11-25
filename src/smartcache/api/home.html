@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartCache: cost-aware caching for AI chatbot answers</title>
+  <link rel="stylesheet" href="/static/site.css">
+  <style>
+    .hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; max-width: 820px; }
+    .hero h1 { font-size: clamp(36px, 5.4vw, 58px); line-height: 1.03; letter-spacing: -0.035em; margin: 0; }
+    .hero .lead { font-size: 19px; }
+    .replay { margin-top: 40px; }
+    .replay-row { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 20px; align-items: start; padding: 18px 0; border-top: 1px solid var(--rule); }
+    .replay-row:last-of-type { border-bottom: 1px solid var(--rule); }
+    .replay-name { font-weight: 700; font-size: 17px; }
+    .replay-name.ours { color: var(--ours); }
+    .replay-stats { margin-top: 6px; font-size: 14px; color: var(--muted); line-height: 1.5; }
+    .replay-stats b { color: var(--ink); font-size: 22px; font-weight: 800; display: block; letter-spacing: -0.01em; }
+    .replay-foot { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+    .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+    .fact b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+    .fact span { color: var(--muted); font-size: 15px; }
+    .how { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+    .formula { font-size: 22px; font-weight: 600; padding: 18px 20px; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); }
+    .formula em { font-style: normal; color: var(--ours); }
+    .how ul { margin: 0; padding-left: 20px; }
+    .how li { margin-bottom: 10px; }
+    .pages { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 40px; }
+    .pages a { display: block; padding: 16px 0; border-top: 1px solid var(--rule); text-decoration: none; color: var(--ink); }
+    .pages a:hover h3 { color: var(--ours); text-decoration: underline; text-underline-offset: 3px; }
+    .pages p { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
+    @media (max-width: 820px) {
+      .replay-row { grid-template-columns: 1fr; gap: 10px; }
+      .facts, .how, .pages { grid-template-columns: 1fr; gap: 20px; }
+    }
+  </style>
+</head>
+<body>
+<header id="site-header"></header>
+<main class="page">
+  <section class="hero">
+    <h1>Answer repeat questions without paying the AI twice.</h1>
+    <p class="lead">A public-service chatbot hears the same questions again and again. SmartCache keeps the answers worth keeping: its learned policy weighs how soon a question will come back against how long the AI takes to answer it.</p>
+    <div class="btn-group">
+      <a class="btn btn-primary" href="/explorer">Open the replay explorer</a>
+      <a class="btn" href="/impact">See the savings</a>
+    </div>
+  </section>
+
+  <section class="replay" aria-labelledby="replay-title">
+    <div class="section-head">
+      <div>
+        <h2 id="replay-title">The same 300 questions, two caches</h2>
+        <p>Each cell is one question to a cache that holds 30 answers. Green was answered from the cache; amber went to the AI model.</p>
+      </div>
+      <div class="legend"><span style="--k: var(--hit)">Answered from cache</span><span style="--k: var(--miss)">Sent to the AI</span></div>
+    </div>
+    <div id="replay-rows"><p class="muted">Replaying questions…</p></div>
+    <div class="replay-foot">
+      <span class="muted small" id="replay-note"></span>
+      <button class="btn" id="replay-again" type="button" disabled>Replay again</button>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="results-title">
+    <div class="section-head"><h2 id="results-title">At one million questions a day</h2>
+      <p>Compared with LRU, the usual default cache, on unseen test traffic.</p></div>
+    <div class="facts" id="facts">
+      <div class="fact"><b id="f-money">—</b><span>less spent on AI calls each year</span></div>
+      <div class="fact"><b id="f-co2">—</b><span>of CO₂ avoided each year</span></div>
+      <div class="fact"><b>30 of 30</b><span>test runs ahead of S3-FIFO, the strongest published baseline</span></div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section aria-labelledby="how-title" class="how">
+    <div>
+      <h2 id="how-title">How it decides what to keep</h2>
+      <p class="muted">When the cache is full, every stored answer gets a score, and the lowest one makes room.</p>
+      <p class="formula">keep score = AI cost × <em>predicted reuse</em></p>
+    </div>
+    <ul>
+      <li><b>Predicted reuse</b> comes from a small neural network trained with reinforcement learning on how soon each answer was needed again.</li>
+      <li><b>It scores answers, not slots</b>, so one trained model works for a cache of 30, 100 or 300 answers.</li>
+      <li><b>A safety guard</b> watches a shadow LRU cache and switches to it if the learned policy ever does worse.</li>
+    </ul>
+  </section>
+
+  <section class="section" aria-labelledby="pages-title">
+    <h2 id="pages-title">Explore the project</h2>
+    <div class="pages">
+      <a href="/explorer"><h3>Replay explorer</h3><p>Step through a request stream and see every policy's hits, misses and evictions.</p></a>
+      <a href="/impact"><h3>Impact</h3><p>Turn benchmark results into rupees, energy, CO₂ and waiting time for your traffic.</p></a>
+      <a href="/metrics-ui"><h3>Live cache</h3><p>Watch the running cache serve real requests, refreshed every second.</p></a>
+      <a href="/catalog"><h3>Catalog</h3><p>The objects the live cache serves, with their measured cost and size.</p></a>
+    </div>
+  </section>
+</main>
+<footer id="site-footer"></footer>
+<script src="/static/site.js"></script>
+<script>
+SC.init('home');
+const REPLAY = {workload: 'chatbot', scenario: 'stationary', seed: 42, requests: 300, capacity: 30};
+const SHOWN = ['LRU', 'LearnedValue'];
+let replay = null, timer = null;
+
+function drawRows(upto) {
+  document.querySelectorAll('[data-row]').forEach(row => {
+    const p = replay.find(x => x.policy === row.dataset.row);
+    const steps = p.steps.slice(0, upto);
+    const hits = steps.filter(s => s.result === 'HIT').length;
+    const cost = upto ? p.steps[upto - 1].cumulative_miss_cost_ms : 0;
+    SC.ribbon(row.querySelector('.ribbon'), p.steps.map(s => s.result), {cols: 75, upto});
+    row.querySelector('[data-hits]').textContent = `${hits} of ${upto} from cache`;
+    row.querySelector('[data-cost]').textContent = `${SC.num(cost / 60000, 1)} min`;
+  });
+}
+
+function play() {
+  clearInterval(timer);
+  const total = replay[0].steps.length;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById('replay-again').disabled = true;
+  if (reduce) { drawRows(total); finish(); return; }
+  let upto = 0;
+  timer = setInterval(() => {
+    upto = Math.min(total, upto + 5);
+    drawRows(upto);
+    if (upto >= total) { clearInterval(timer); finish(); }
+  }, 40);
+}
+
+function finish() {
+  document.getElementById('replay-again').disabled = false;
+  const [base, ours] = SHOWN.map(n => replay.find(p => p.policy === n).summary);
+  const saved = (base.total_miss_cost_ms - ours.total_miss_cost_ms) / base.total_miss_cost_ms * 100;
+  document.getElementById('replay-note').textContent =
+    `${SHOWN[1]} spent ${SC.num(saved, 1)}% less AI time than ${SHOWN[0]} on these questions. The first questions miss in both, because every cache starts empty.`;
+}
+
+fetch('/simulation?' + new URLSearchParams(REPLAY)).then(r => {
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}).then(data => {
+  if (!data.policies.some(p => p.policy === 'LearnedValue')) SHOWN[1] = 'S3-FIFO';
+  replay = data.policies.filter(p => SHOWN.includes(p.policy));
+  document.getElementById('replay-rows').innerHTML = SHOWN.map(name => `
+    <div class="replay-row" data-row="${SC.esc(name)}">
+      <div>
+        <div class="replay-name${name === 'LearnedValue' ? ' ours' : ''}">${name === 'LearnedValue' ? 'LearnedValue (ours)' : SC.esc(name)}</div>
+        <div class="replay-stats"><b data-cost>0 min</b>of AI time<br><span data-hits></span></div>
+      </div>
+      <div class="ribbon" role="img" aria-label="${SC.esc(name)}: hits and misses for each question"></div>
+    </div>`).join('');
+  play();
+}).catch(error => {
+  document.getElementById('replay-rows').innerHTML =
+    `<div class="error-box">The replay could not load: ${SC.esc(error.message)}. Check that the server is running and try reloading the page.</div>`;
+});
+document.getElementById('replay-again').onclick = play;
+
+fetch('/impact-data').then(r => r.ok ? r.json() : Promise.reject()).then(data => {
+  const s = data.scenarios.stationary.policies.LearnedValue.saved_vs_lru;
+  const yearly = 365 * 1_000_000 / data.per_questions;
+  document.getElementById('f-money').textContent = `₹${SC.num(s.cost_inr * yearly / 1e5, 2)} lakh`;
+  document.getElementById('f-co2').textContent = `${SC.num(s.co2_kg * yearly / 1000, 1)} tonnes`;
+}).catch(() => {
+  document.getElementById('f-money').textContent = 'Not computed';
+  document.getElementById('f-co2').textContent = 'Not computed';
+});
+</script>
+</body>
+</html>

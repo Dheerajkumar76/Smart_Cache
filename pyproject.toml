@@ -28,5 +28,9 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+# Dashboard pages and their styles must ship with the package (e.g. in Docker).
+"smartcache.api" = ["*.html", "static/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

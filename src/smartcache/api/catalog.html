@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Catalog: SmartCache</title>
+  <link rel="stylesheet" href="/static/site.css">
+  <style>
+    .outcome { min-width: 230px; }
+    .outcome .muted { font-size: 14px; margin-left: 8px; }
+  </style>
+</head>
+<body>
+<header id="site-header"></header>
+<main class="page">
+  <div class="page-head">
+    <h1>Catalog</h1>
+    <p class="lead" id="lead">The objects the live cache serves, with the cost of fetching each one from the origin.</p>
+  </div>
+  <div class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Object</th><th class="num">Cost to fetch</th><th class="num">Size</th><th>Request it</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="4" class="muted">Loading the catalog…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <p class="muted small">Request an object twice: the first request misses and goes to the origin, the second is a cache hit. Every request here counts in <a href="/metrics-ui">Live cache</a>.</p>
+</main>
+<footer id="site-footer"></footer>
+<script src="/static/site.js"></script>
+<script>
+SC.init('catalog');
+
+async function request(key, cell) {
+  cell.innerHTML = '<span class="muted">Requesting…</span>';
+  try {
+    const response = await fetch('/objects/' + encodeURIComponent(key), {cache: 'no-store'});
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const result = response.headers.get('X-Cache');
+    const backend = Number(response.headers.get('X-Backend-Latency-Ms') || 0);
+    cell.innerHTML = result === 'HIT'
+      ? '<span class="result result-hit">Hit</span><span class="muted">served from the cache</span>'
+      : `<span class="result result-miss">Miss</span><span class="muted">origin took ${SC.num(backend, 1)} ms</span>`;
+  } catch (error) {
+    cell.innerHTML = `<span class="neg">Request failed: ${SC.esc(error.message)}</span>`;
+  }
+}
+
+fetch('/catalog-data').then(r => r.json()).then(data => {
+  document.getElementById('lead').textContent =
+    `The ${data.objects.length} objects the live cache serves from the ${data.origin_backend === 'sqlite' ? 'SQLite database' : 'demo origin'}, with the cost of fetching each one.`;
+  document.getElementById('rows').innerHTML = data.objects.map(o => `
+    <tr>
+      <td><b>${SC.esc(o.key)}</b></td>
+      <td class="num">${SC.num(o.retrieval_cost_ms, 1)} ms</td>
+      <td class="num">${SC.num(o.size_bytes)} bytes</td>
+      <td class="outcome"><button class="btn" type="button" data-key="${SC.esc(o.key)}">Request</button> <span></span></td>
+    </tr>`).join('');
+  document.querySelectorAll('[data-key]').forEach(button =>
+    button.onclick = () => request(button.dataset.key, button.nextElementSibling));
+}).catch(error => {
+  document.getElementById('rows').innerHTML =
+    `<tr><td colspan="4"><div class="error-box">The catalog could not load: ${SC.esc(error.message)}.</div></td></tr>`;
+});
+</script>
+</body>
+</html>

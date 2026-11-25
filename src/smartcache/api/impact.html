@@ -3,146 +3,141 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SmartCache Impact Report</title>
+  <title>Impact report: SmartCache</title>
+  <link rel="stylesheet" href="/static/site.css">
   <style>
-    :root { color-scheme: dark; --bg: #0e1624; --panel: #172235; --line: #2b3b55; --muted: #9dafc8; --text: #eef4ff;
-            --accent: #3987e5; --context: #5b6b82; --good: #4ade80; }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, sans-serif; }
-    main { max-width: 1180px; margin: auto; padding: 28px; }
-    h1 { margin: 0 0 6px; } h2 { margin: 0 0 12px; font-size: 17px; }
-    a { color: #9bd1ff; } .nav a { margin-right: 16px; }
-    .muted { color: var(--muted); }
-    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-top: 16px; }
-    .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; }
-    label { display: grid; gap: 5px; color: var(--muted); }
-    input, select { border: 1px solid var(--line); border-radius: 7px; padding: 9px 11px; background: #101a2b; color: var(--text); min-width: 170px; }
-    .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    .tile { background: #101a2b; border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
-    .tile .value { font-size: 28px; font-weight: 700; margin: 4px 0; font-variant-numeric: tabular-nums; }
-    .tile .sub { color: var(--muted); font-size: 13px; }
-    .bars { display: grid; gap: 6px; }
-    .bar-row { display: grid; grid-template-columns: 190px 1fr; gap: 10px; align-items: center; }
-    .bar-name { text-align: right; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .bar-name.ours { color: var(--text); font-weight: 700; }
-    .bar-track { position: relative; height: 22px; }
-    .bar { height: 100%; border-radius: 0 4px 4px 0; background: var(--context); }
-    .bar.ours { background: var(--accent); }
-    .bar.reference { background: transparent; border: 2px dashed var(--context); }
-    .bar-value { position: absolute; top: 2px; color: var(--text); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .bar-hit { position: absolute; inset: -3px 0; cursor: default; }
-    .axis-note { color: var(--muted); font-size: 12px; margin-top: 8px; }
-    #tooltip { position: fixed; pointer-events: none; background: #0b1220; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 13px; display: none; z-index: 10; min-width: 220px; }
-    #tooltip b { display: block; margin-bottom: 4px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--line); }
-    th { color: var(--muted); font-weight: 600; } td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-    tr.ours td { background: #13263f; font-weight: 600; }
-    .pos { color: var(--good); }
-    .tag { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 1px 7px; margin-left: 6px; }
-    @media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, 1fr); } .bar-row { grid-template-columns: 120px 1fr; } }
+    .controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .controls .field input, .controls .field select { width: 100%; }
+    .savings { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 2px solid var(--ink); margin-top: 8px; }
+    .saving { padding: 18px 20px 18px 0; }
+    .saving + .saving { padding-left: 20px; border-left: 1px solid var(--rule); }
+    .saving span { color: var(--muted); font-size: 15px; display: block; }
+    .saving b { display: block; font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; margin: 4px 0; }
+    .saving small { color: var(--muted); font-size: 14px; }
+    .bars { display: grid; gap: 7px; margin-top: 8px; }
+    .bar-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; align-items: center; }
+    .bar-name { text-align: right; font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-name.ours { color: var(--ours); font-weight: 700; }
+    .bar-track { position: relative; height: 24px; }
+    .bar { height: 100%; background: #b7c3bd; border-radius: 0 4px 4px 0; }
+    .bar.ours { background: var(--ours); }
+    .bar.none { background: var(--miss); opacity: 0.55; }
+    .bar.reference { background: repeating-linear-gradient(45deg, transparent 0 5px, var(--rule-strong) 5px 6px); border: 1px solid var(--rule-strong); }
+    .bar-value { position: absolute; top: 3px; font-size: 13px; white-space: nowrap; }
+    .bar-hit { position: absolute; inset: -4px 0; }
+    #tooltip { position: fixed; pointer-events: none; background: var(--ink); color: #fff; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.5; display: none; z-index: 10; min-width: 210px; }
+    #tooltip b { display: block; margin-bottom: 2px; }
+    .assumptions { font-size: 15px; color: var(--muted); max-width: 80ch; }
+    .assumptions li { margin-bottom: 6px; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .savings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .saving + .saving { padding-left: 0; border-left: 0; }
+      .bar-row { grid-template-columns: 110px minmax(0, 1fr); }
+    }
   </style>
 </head>
 <body>
-<main>
-  <p class="nav"><a href="/">Home</a><a href="/explorer">Simulation Explorer</a><a href="/metrics-ui">Live metrics</a></p>
-  <h1>Impact report: AI public-service chatbot</h1>
-  <div class="muted">Each cache miss is a call to a large language model (LLM). Results come from the chatbot benchmark on unseen test traces, converted into money, energy, CO₂ and user waiting time.</div>
-  <div id="error" class="panel" style="display:none"></div>
+<header id="site-header"></header>
+<main class="page">
+  <div class="page-head">
+    <h1>Impact report</h1>
+    <p class="lead">Every cache miss is a call to the AI model. Set your own traffic and price to see what each caching policy would cost in rupees, energy, CO₂ and people's waiting time.</p>
+  </div>
+  <div id="error"></div>
 
-  <section class="panel">
+  <section class="panel" aria-label="Your traffic">
     <div class="controls">
-      <label>Traffic pattern<select id="scenario"><option value="stationary">Stationary</option><option value="drifting">Topic drift (seasonal)</option></select></label>
-      <label>Questions per day<input id="volume" type="number" min="1000" step="1000" value="1000000"></label>
-      <label>LLM price (₹ per 1,000 output tokens)<input id="price" type="number" min="0" step="0.05"></label>
-      <label>Compare against<select id="baseline"><option value="lru">LRU cache (common default)</option><option value="none">No cache</option></select></label>
+      <label class="field">Traffic pattern<select id="scenario"><option value="stationary">Steady topics</option><option value="drifting">Topics change with the season</option></select></label>
+      <label class="field">Questions per day<input id="volume" type="number" min="1000" step="1000" value="1000000"></label>
+      <label class="field">AI price (₹ per 1,000 output tokens)<input id="price" type="number" min="0" step="0.05"></label>
+      <label class="field">Compare against<select id="baseline"><option value="lru">LRU cache (the usual default)</option><option value="none">No cache at all</option></select></label>
     </div>
   </section>
 
-  <section class="panel">
+  <section class="section" aria-labelledby="tiles-title">
     <h2 id="tiles-title">Yearly savings with LearnedValue</h2>
-    <div class="tiles">
-      <div class="tile"><div class="muted">LLM spend saved</div><div class="value" id="t-cost">—</div><div class="sub" id="t-cost-sub"></div></div>
-      <div class="tile"><div class="muted">Energy saved</div><div class="value" id="t-energy">—</div><div class="sub" id="t-energy-sub"></div></div>
-      <div class="tile"><div class="muted">CO₂ avoided</div><div class="value" id="t-co2">—</div><div class="sub" id="t-co2-sub"></div></div>
-      <div class="tile"><div class="muted">User waiting time saved</div><div class="value" id="t-wait">—</div><div class="sub" id="t-wait-sub"></div></div>
+    <div class="savings">
+      <div class="saving"><span>AI spending</span><b id="t-cost">—</b><small id="t-cost-sub"></small></div>
+      <div class="saving"><span>Energy</span><b id="t-energy">—</b><small id="t-energy-sub"></small></div>
+      <div class="saving"><span>CO₂</span><b id="t-co2">—</b><small id="t-co2-sub"></small></div>
+      <div class="saving"><span>People's waiting time</span><b id="t-wait">—</b><small id="t-wait-sub"></small></div>
     </div>
   </section>
 
-  <section class="panel">
-    <h2>Daily LLM spend by cache policy (₹, lower is better)</h2>
-    <div id="bars" class="bars"></div>
-    <div class="axis-note">Blue: LearnedValue (ours). Dashed outline: future-knowing reference policies, shown only as a yardstick; they cannot be deployed. Hover a bar for details.</div>
+  <section class="section" aria-labelledby="bars-title">
+    <div class="section-head">
+      <h2 id="bars-title">Daily AI spending by policy</h2>
+      <p>Lower is better. Hatched bars can see the future, so they only show the best possible; they cannot be deployed.</p>
+    </div>
+    <div class="panel"><div id="bars" class="bars"></div></div>
   </section>
 
-  <section class="panel">
-    <h2>All policies per day</h2>
-    <div id="table"></div>
+  <section class="section" aria-labelledby="table-title">
+    <h2 id="table-title">Every policy, per day</h2>
+    <div class="panel"><div class="table-wrap"><table id="table"></table></div></div>
   </section>
 
-  <section class="panel">
-    <h2>Assumptions</h2>
-    <div id="assumptions" class="muted"></div>
+  <section class="section" aria-labelledby="assumptions-title">
+    <h2 id="assumptions-title">How these numbers are worked out</h2>
+    <ul class="assumptions" id="assumptions"></ul>
   </section>
 </main>
-<div id="tooltip"></div>
+<footer id="site-footer"></footer>
+<div id="tooltip" role="tooltip"></div>
+<script src="/static/site.js"></script>
 <script>
+SC.init('impact');
 const $ = id => document.getElementById(id);
+const {esc, num, inr} = SC;
 let data = null;
-function esc(v) { return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-const inr = v => (v < 0 ? '−₹' : '₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
-const num = (v, d = 0) => v.toLocaleString('en-IN', {minimumFractionDigits: d, maximumFractionDigits: d});
-function compact(v, unit, digits = 0) {
-  if (Math.abs(v) >= 1e7) return num(v / 1e7, 2) + ' crore ' + unit;
-  if (Math.abs(v) >= 1e5) return num(v / 1e5, 2) + ' lakh ' + unit;
-  return num(v, digits) + ' ' + unit;
+
+function compact(value, unit, digits = 0) {
+  if (Math.abs(value) >= 1e7) return `${num(value / 1e7, 2)} crore ${unit}`.trim();
+  if (Math.abs(value) >= 1e5) return `${num(value / 1e5, 2)} lakh ${unit}`.trim();
+  return `${num(value, digits)} ${unit}`.trim();
 }
 
-// Convert one stored impact record (per 1M questions) to the chosen daily volume and price.
+// Scale a stored record (per 1 million questions) to the chosen volume and price.
 function adjust(impact) {
   const factor = Number($('volume').value || 0) / data.per_questions;
   const priceRatio = Number($('price').value || 0) / data.assumptions.price_inr_per_1k_output_tokens;
-  return {
-    calls: impact.llm_calls * factor,
-    cost: impact.cost_inr * factor * priceRatio,
-    kwh: impact.energy_kwh * factor,
-    co2: impact.co2_kg * factor,
-    wait: impact.user_wait_hours * factor,
-  };
+  return {calls: impact.llm_calls * factor, cost: impact.cost_inr * factor * priceRatio,
+          kwh: impact.energy_kwh * factor, co2: impact.co2_kg * factor, wait: impact.user_wait_hours * factor};
 }
 
 function render() {
   const scenario = data.scenarios[$('scenario').value];
-  const rows = Object.entries(scenario.policies).map(([name, p]) => ({name, reference: p.reference, ...adjust(p.impact)}));
-  rows.sort((a, b) => a.cost - b.cost);
+  const rows = Object.entries(scenario.policies).map(([name, p]) => ({name, reference: p.reference, ...adjust(p.impact)}))
+    .sort((a, b) => a.cost - b.cost);
   const noCache = adjust(scenario.no_cache);
   const lru = rows.find(r => r.name === 'LRU');
   const ours = rows.find(r => r.name === 'LearnedValue');
   const base = $('baseline').value === 'lru' ? lru : noCache;
-  const baseLabel = $('baseline').value === 'lru' ? 'LRU' : 'no cache';
+  const baseLabel = $('baseline').value === 'lru' ? 'an LRU cache' : 'no cache';
 
   if (ours) {
-    $('tiles-title').textContent = `Yearly savings with LearnedValue vs ${baseLabel}`;
     const y = 365;
-    $('t-cost').textContent = '₹' + compact((base.cost - ours.cost) * y, '').trim();
+    $('tiles-title').textContent = `Yearly savings with LearnedValue, compared with ${baseLabel}`;
+    $('t-cost').textContent = '₹' + compact((base.cost - ours.cost) * y, '');
     $('t-energy').textContent = compact((base.kwh - ours.kwh) * y, 'kWh');
-    $('t-co2').textContent = compact((base.co2 - ours.co2) * y / 1000, 'tonnes', 1);
+    $('t-co2').textContent = `${num((base.co2 - ours.co2) * y / 1000, 1)} tonnes`;
     $('t-wait').textContent = compact((base.wait - ours.wait) * y, 'hours');
-    $('t-cost-sub').textContent = `${inr(base.cost - ours.cost)} per day`;
-    $('t-energy-sub').textContent = `${num(base.kwh - ours.kwh, 1)} kWh per day`;
-    $('t-co2-sub').textContent = `${num(base.co2 - ours.co2, 1)} kg per day`;
-    $('t-wait-sub').textContent = `${num(base.calls - ours.calls)} fewer LLM calls per day`;
+    $('t-cost-sub').textContent = `${inr(base.cost - ours.cost)} a day`;
+    $('t-energy-sub').textContent = `${num(base.kwh - ours.kwh, 1)} kWh a day`;
+    $('t-co2-sub').textContent = `${num(base.co2 - ours.co2, 1)} kg a day`;
+    $('t-wait-sub').textContent = `${num(base.calls - ours.calls)} fewer AI calls a day`;
   }
 
-  const max = Math.max(noCache.cost, ...rows.map(r => r.cost));
-  const barRows = [{name: 'No cache', ...noCache, noCache: true}, ...rows];
+  const barRows = [{name: 'No cache', ...noCache, none: true}, ...rows];
+  const max = Math.max(...barRows.map(r => r.cost));
   $('bars').innerHTML = barRows.map((r, i) => {
-    const cls = r.name === 'LearnedValue' ? 'ours' : r.reference ? 'reference' : '';
-    const width = (r.cost / max * 88).toFixed(2);
-    const label = r.name + (r.reference ? ' (ref)' : '');
+    const cls = r.name === 'LearnedValue' ? 'ours' : r.reference ? 'reference' : r.none ? 'none' : '';
+    const width = (r.cost / max * 86).toFixed(2);
+    const label = r.name === 'LearnedValue' ? 'LearnedValue (ours)' : r.name;
     return `<div class="bar-row"><div class="bar-name ${cls === 'ours' ? 'ours' : ''}" title="${esc(label)}">${esc(label)}</div>
       <div class="bar-track"><div class="bar ${cls}" style="width:${width}%"></div>
-      <span class="bar-value" style="left:calc(${width}% + 6px)">${inr(r.cost)}</span>
+      <span class="bar-value" style="left:calc(${width}% + 8px)">${inr(r.cost)}</span>
       <div class="bar-hit" data-index="${i}"></div></div></div>`;
   }).join('');
   document.querySelectorAll('.bar-hit').forEach(el => {
@@ -150,21 +145,22 @@ function render() {
     el.onmousemove = ev => {
       const t = $('tooltip');
       t.style.display = 'block';
-      t.style.left = Math.min(ev.clientX + 14, window.innerWidth - 260) + 'px';
+      t.style.left = Math.min(ev.clientX + 14, window.innerWidth - 240) + 'px';
       t.style.top = (ev.clientY + 14) + 'px';
-      t.innerHTML = `<b>${esc(r.name)}</b>LLM calls: ${num(r.calls)}<br>LLM spend: ${inr(r.cost)}<br>Energy: ${num(r.kwh, 1)} kWh<br>CO₂: ${num(r.co2, 1)} kg<br>User waiting: ${num(r.wait)} hours`
-        + (r.noCache ? '' : `<br><span class="muted">vs LRU: ${inr(lru.cost - r.cost)} saved</span>`);
+      t.innerHTML = `<b>${esc(r.name)}</b>${num(r.calls)} AI calls<br>${inr(r.cost)} AI spending<br>${num(r.kwh, 1)} kWh, ${num(r.co2, 1)} kg CO₂<br>${num(r.wait)} hours of waiting`;
     };
     el.onmouseleave = () => { $('tooltip').style.display = 'none'; };
   });
 
-  $('table').innerHTML = `<table><tr><th>Policy</th><th class="num">LLM calls</th><th class="num">LLM spend</th><th class="num">Energy (kWh)</th><th class="num">CO₂ (kg)</th><th class="num">User wait (h)</th><th class="num">Saved vs ${esc(baseLabel)}</th></tr>`
+  $('table').innerHTML = `<thead><tr><th>Policy</th><th class="num">AI calls</th><th class="num">AI spending</th><th class="num">Energy (kWh)</th><th class="num">CO₂ (kg)</th><th class="num">Waiting (hours)</th><th class="num">Saved vs ${esc(baseLabel.replace('an ', ''))}</th></tr></thead><tbody>`
     + [{name: 'No cache', ...noCache}, ...rows].map(r => {
       const saved = base.cost - r.cost;
-      return `<tr class="${r.name === 'LearnedValue' ? 'ours' : ''}"><td>${esc(r.name)}${r.reference ? '<span class="tag">future-knowing reference</span>' : ''}${r.name === 'LearnedValue' ? '<span class="tag">ours</span>' : ''}</td>`
-        + `<td class="num">${num(r.calls)}</td><td class="num">${inr(r.cost)}</td><td class="num">${num(r.kwh, 1)}</td><td class="num">${num(r.co2, 1)}</td><td class="num">${num(r.wait)}</td>`
-        + `<td class="num ${saved > 0 ? 'pos' : ''}">${saved === 0 ? '—' : inr(saved)}</td></tr>`;
-    }).join('') + '</table>';
+      const tag = r.reference ? '<span class="tag">sees the future</span>' : r.name === 'LearnedValue' ? '<span class="tag tag-ours">ours</span>' : '';
+      return `<tr class="${r.name === 'LearnedValue' ? 'is-ours' : ''}"><td>${esc(r.name)}${tag}</td>
+        <td class="num">${num(r.calls)}</td><td class="num">${inr(r.cost)}</td><td class="num">${num(r.kwh, 1)}</td>
+        <td class="num">${num(r.co2, 1)}</td><td class="num">${num(r.wait)}</td>
+        <td class="num ${saved > 0.5 ? 'pos' : saved < -0.5 ? 'neg' : ''}">${Math.abs(saved) < 0.5 ? '—' : inr(saved)}</td></tr>`;
+    }).join('') + '</tbody>';
 }
 
 fetch('/impact-data').then(async response => {
@@ -174,16 +170,16 @@ fetch('/impact-data').then(async response => {
   data = json;
   const a = data.assumptions;
   $('price').value = a.price_inr_per_1k_output_tokens;
-  $('assumptions').innerHTML = `Cache size: ${data.capacity} answers. Results averaged over the benchmark's test traces and scaled linearly to the chosen daily volume.<br>
-    LLM response time = ${a.time_to_first_token_ms} ms + ${a.ms_per_token} ms per output token.<br>
-    Energy: ${a.energy_wh_per_1k_output_tokens} Wh per 1,000 output tokens, based on Epoch AI's (2025) estimate of about 0.3 Wh for a typical ChatGPT query and an assumed ~500-token answer.<br>
-    CO₂: ${a.grid_kg_co2_per_kwh} kg per kWh, India's grid weighted-average emission factor (Central Electricity Authority, CO₂ Baseline Database v20.0), assuming the model is served from the Indian grid.<br>
-    Price: an editable assumption; LLM prices vary more than 10× between providers and models. Only output tokens are counted.`;
+  $('assumptions').innerHTML = `
+    <li>Results come from the chatbot benchmark on unseen test traffic with a cache of ${data.capacity} answers, scaled in proportion to your daily questions.</li>
+    <li>AI response time is ${a.time_to_first_token_ms} ms plus ${a.ms_per_token} ms per word-piece (token) of the answer.</li>
+    <li>Energy is ${a.energy_wh_per_1k_output_tokens} Wh per 1,000 output tokens, based on Epoch AI's (2025) estimate of about 0.3 Wh for a typical ChatGPT query, assuming answers of about 500 tokens.</li>
+    <li>CO₂ is ${a.grid_kg_co2_per_kwh} kg per kWh, India's grid average from the Central Electricity Authority's CO₂ Baseline Database (version 20), assuming the model runs on the Indian grid.</li>
+    <li>The AI price is yours to set: prices differ more than tenfold between providers. Only output tokens are counted.</li>`;
   ['scenario', 'volume', 'price', 'baseline'].forEach(id => $(id).oninput = render);
   render();
 }).catch(error => {
-  $('error').style.display = 'block';
-  $('error').textContent = 'Impact data not available: ' + error.message;
+  $('error').innerHTML = `<div class="error-box">The impact numbers are not available yet (${esc(error.message)}). Run <code>python scripts/benchmark_chatbot.py</code> and then <code>python scripts/impact_report.py</code>, and reload this page.</div>`;
 });
 </script>
 </body>

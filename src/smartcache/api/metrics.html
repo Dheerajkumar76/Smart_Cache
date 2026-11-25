@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live cache: SmartCache</title>
+  <link rel="stylesheet" href="/static/site.css">
+  <style>
+    .headline { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+    .ratio b { display: block; font-size: 64px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+    .ratio span { color: var(--muted); }
+    .meter { height: 12px; background: var(--empty); border-radius: 99px; overflow: hidden; margin: 10px 0 6px; }
+    .meter div { height: 100%; background: var(--ours); border-radius: 99px; transition: width 0.4s ease; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--rule); margin-top: 32px; }
+    .stat { padding: 16px 16px 16px 0; border-bottom: 1px solid var(--rule); }
+    .stat span { color: var(--muted); font-size: 14px; display: block; }
+    .stat b { font-size: 24px; font-weight: 700; }
+    .status { font-size: 14px; color: var(--muted); }
+    .status.live::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--hit); margin-right: 8px; vertical-align: 1px; }
+    @media (max-width: 820px) { .headline { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  </style>
+</head>
+<body>
+<header id="site-header"></header>
+<main class="page">
+  <div class="page-head">
+    <h1>Live cache</h1>
+    <p class="lead">The running cache, refreshed every second. Only requests to <code>/objects/&lt;key&gt;</code> count; replays in the explorer do not.</p>
+  </div>
+
+  <div class="headline">
+    <div class="ratio">
+      <b id="hit-ratio">—</b>
+      <span id="ratio-note">of requests answered from the cache</span>
+      <div class="section" style="margin-top: 28px">
+        <h3>Memory in use</h3>
+        <div class="meter" aria-hidden="true"><div id="memory-bar" style="width: 0%"></div></div>
+        <span class="muted small" id="memory-note">—</span>
+      </div>
+    </div>
+    <div>
+      <h3>Recent requests</h3>
+      <p class="muted small" style="margin-top: 0">New requests appear on the right as the counters change.</p>
+      <div class="ribbon" id="recent" role="img" aria-label="Recent hits and misses"></div>
+      <div class="legend" style="margin-top: 10px"><span style="--k: var(--hit)">Hit</span><span style="--k: var(--miss)">Miss</span></div>
+      <div class="btn-group" style="margin-top: 18px">
+        <button class="btn btn-primary" id="traffic" type="button">Send 30 test requests</button>
+        <a class="btn" href="/metrics">Raw metrics (JSON)</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <p class="status" id="status">Connecting…</p>
+</main>
+<footer id="site-footer"></footer>
+<script src="/static/site.js"></script>
+<script>
+SC.init('live');
+const FIELDS = [
+  ['requests', 'Requests', 0], ['hits', 'Hits', 0], ['misses', 'Misses', 0], ['evictions', 'Evictions', 0],
+  ['bypasses', 'Too large to cache', 0], ['objects', 'Objects stored', 0],
+  ['backend_latency_ms', 'Origin time (ms)', 1], ['policy_time_ms', 'Decision time (ms)', 3],
+];
+const recent = [];
+let previous = null, capacity = null, objects = [];
+
+fetch('/runtime-info').then(r => r.json()).then(info => { capacity = info.capacity_bytes; objects = info.objects; });
+
+function render(data) {
+  const requests = Number(data.requests || 0);
+  document.getElementById('hit-ratio').textContent = requests ? `${SC.num(data.hits / requests * 100, 1)}%` : '—';
+  document.getElementById('ratio-note').textContent = requests
+    ? `of ${SC.num(requests)} requests answered from the cache`
+    : 'No requests yet. Send test requests to start.';
+  if (capacity) {
+    const share = Math.min(100, data.used_bytes / capacity * 100);
+    document.getElementById('memory-bar').style.width = share + '%';
+    document.getElementById('memory-note').textContent = `${SC.num(data.used_bytes)} of ${SC.num(capacity)} bytes (${SC.num(share, 0)}%)`;
+  }
+  document.getElementById('stats').innerHTML = FIELDS.map(([key, label, digits]) =>
+    `<div class="stat"><span>${label}</span><b>${SC.num(data[key] ?? 0, digits)}</b></div>`).join('');
+
+  // Build the recent-requests ribbon from how much each counter moved since the last poll.
+  if (previous) {
+    const newHits = Math.max(0, data.hits - previous.hits);
+    const newMisses = Math.max(0, data.misses - previous.misses);
+    for (let i = 0; i < newMisses; i++) recent.push('MISS');
+    for (let i = 0; i < newHits; i++) recent.push('HIT');
+    recent.splice(0, Math.max(0, recent.length - 120));
+  }
+  previous = data;
+  const padded = Array(120 - recent.length).fill('').concat(recent);
+  SC.ribbon(document.getElementById('recent'), padded, {cols: 30, upto: 120});
+  document.querySelectorAll('#recent i').forEach((cell, i) => { if (!padded[i]) cell.className = ''; });
+}
+
+async function refresh() {
+  const status = document.getElementById('status');
+  try {
+    const response = await fetch('/metrics', {cache: 'no-store'});
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    render(await response.json());
+    status.className = 'status live';
+    status.textContent = 'Live, updated ' + new Date().toLocaleTimeString();
+  } catch (error) {
+    status.className = 'status';
+    status.textContent = `Metrics unavailable (${error.message}). Check that the server is running.`;
+  }
+}
+
+document.getElementById('traffic').onclick = async () => {
+  const button = document.getElementById('traffic');
+  if (!objects.length) return;
+  button.disabled = true;
+  // Skewed traffic: a few objects are requested much more often, like real users.
+  for (let i = 0; i < 30; i++) {
+    const index = Math.min(objects.length - 1, Math.floor(objects.length * Math.random() ** 2.2));
+    await fetch('/objects/' + encodeURIComponent(objects[index]), {cache: 'no-store'});
+  }
+  button.disabled = false;
+  refresh();
+};
+
+refresh();
+setInterval(refresh, 1000);
+</script>
+</body>
+</html>
